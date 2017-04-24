@@ -32,6 +32,7 @@ def choose_ui(self, btn):
         root.withdraw()
         import GUI_Main
     else:
+        import textbased.Text_Main
         b_GUI = False  # TODO: Link up with Text_Main.py for CLI
 
 

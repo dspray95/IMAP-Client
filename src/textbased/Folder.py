@@ -1,5 +1,5 @@
 # External Libraries
-import imaplib  # Used in exception catching
+import imaplib
 
 def ViewFolders(conn):
     folders = conn.list_folders()
@@ -20,7 +20,7 @@ def SelectFolder(conn):
 
     for flags, delimiter, folder_name in folders:
         if folderName in [folder_name]:
-            conn.close_folder
+            conn.close_folder()
             conn.select_folder(folderName)
             print "Folder Set To: ", folderName
             return folderName

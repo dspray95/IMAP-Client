@@ -4,9 +4,6 @@ import imaplib
 
 class ConnectionManager():
 
-    def __init__(self):
-        self.conn = IMAPClient
-
     def connect(self, server):
         # Setup connection to Elwood #
         ssl = False
@@ -16,13 +13,15 @@ class ConnectionManager():
             print "Connection success\n"
         except:
             raise ConnectionManagerException("Connection Failed")
+        return self.conn
 
     def login(self, username, password):
         try:
             self.conn.login(username, password)
+            print "logged in"#
         except:
             raise ConnectionManagerException("Login Failed")
-
+        return self.conn
 
 class ConnectionManagerException(Exception):
 
