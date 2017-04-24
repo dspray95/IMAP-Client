@@ -1,7 +1,7 @@
 import Tkinter as tk
 from ConnectionHandler import ConnectionManager, ConnectionManagerException
 from FolderHandler import FolderManager
-from Messenger import Messenger
+from Messenger import Messenger, MessengerDud
 import sys
 from ttk import Frame, Button, Style
 
@@ -74,15 +74,18 @@ class FolderFrame(EmptyFrame):
     def __init__(self, master, controller):
         EmptyFrame.__init__(self, master, controller)
         self.folders = list()
-        self.inbox_frame = InboxFrame(self, controller)
+        self.inboxes = list()
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=8)
-        self.inbox_frame.grid(column=1, row=0, padx=0, pady=0, sticky = tk.W+tk.E, )
         self.configure(bg = "blue")
 
     def set_folders(self, filing_cabinet):
         self.filing_cabinet = filing_cabinet
         self.folders = filing_cabinet.list_folders()
+        for folder in self.folders:
+            inbox_frame = InboxFrame(self, self.controller, folder)
+            inbox_frame.grid(column=1, row=1, padx=0, pady=0, sticky=tk.W + tk.E, )
+            self.inboxes.append(inbox_frame)
 
     def create_widgets(self):
         """Create the base widgets for the frame."""
@@ -90,32 +93,40 @@ class FolderFrame(EmptyFrame):
     def populate_folders(self):
         buttons = list()
         self.buttons_frame = tk.Frame(self)
+        self.lbl_title = tk.Label(self.buttons_frame, text="Folders")
+        self.lbl_title.pack(fill=tk.BOTH, expand=1)
+        self.buttons_frame.grid(column = 0, row = 1, sticky=tk.W+tk.E+tk.N)
         i = 0
         for folder in self.folders:
             print "creating button for ", folder
+            current_inbox = self.inboxes[i]
             buttons.append(tk.Button(self.buttons_frame,
-                                        anchor="w",
-                                        command=lambda folder=folder: self.inbox_frame.setup_messages(folder),
-                                        padx=5,
-                                        pady=0,
-                                        text=folder))
+                                     anchor="w",
+                                     command=lambda current_inbox = current_inbox, folder = folder: current_inbox.switch_inboxes(folder, self.inboxes),
+                                     padx=5,
+                                     pady=0,
+                                     text=folder))
             buttons[i].pack(fill=tk.BOTH, expand=1)
-            i = i+1
-            # buttons[i].grid(column = 0, row = i, sticky=tk.W+tk.E)
-            # i = i + 1
-        self.buttons_frame.grid(column = 0, row = 0, sticky=tk.W+tk.E)
-
-    def setup_messages(self, folder):
-        self.inbox_frame.update_inbox(folder)
+            row = i + 1
+            # buttons[i].grid(column=0, row=row, padx=0, pady=0, sticky=tk.W+tk.E+tk.N+tk.S)
+            self.rowconfigure(row, minsize=30)
+            print "btn added"
+            i = i + 1
 
 class InboxFrame(EmptyFrame):
 
-    def __init__(self, master, controller):
+    def __init__(self, master, controller, folder):
         EmptyFrame.__init__(self, master, controller)
+        self.folder = folder
+        self.controller = controller
         self.messengers = list()
+        self.message_container = tk.Frame(self)
+        self.update_inbox(self.folder)
+
+    def get_folder(self):
+        return self.folder
 
     def update_inbox(self, folder):
-        self.configure(bg = "blue")
         self.folder = folder
         fetched_messages = self.controller.get_messages(self.folder)
         print "fetched messages"
@@ -126,22 +137,26 @@ class InboxFrame(EmptyFrame):
         self.messengers = list()
 
         i = 0
+        clean_message_dud = 1, "Subject", "Flags", "Sender", "Body"
+        MessengerDud(self.message_container, "message_dud", clean_message_dud, 99, self.controller)
         for message in fetched_messages:
-            self.messengers.append(Messenger(self.master, message, clean_messages[i], i))
+            self.messengers.append(Messenger(self.message_container, message, clean_messages[i], i+1, self.controller))
             i = i + 1
-
+        self.message_container.grid(column = 0, row = 1, sticky=tk.W+tk.E+tk.N)
         x = 0
-        # for messenger in self.messengers:
-        #     messenger.grid(column=1, row = x)
-        #     x = x + 1
+            # for messenger in self.messengers:
+            #     messenger.grid(column=1, row = x)
+            #     x = x + 1
 
-    def empty_inbox(self):
-        for message in self.messengers:
-            message.destroy()
 
-    def setup_messages(self, folder):
-        self.empty_inbox()
-        self.update_inbox(folder)
+    # There is a much faster way to do this, but I dont have time to implement it
+    # If the widgets could be stored inside a Frame, each folder could be quickly swapped out
+    # and updated by comparison between a refresh in the folder handler and the current list
+    # of messages instead of completely remaking each widget (Theres a lot of widgets...)
+    def switch_inboxes(self, folder, other_inboxes):
+        for inbox in other_inboxes:
+            inbox.grid_remove()
+        self.grid(column = 1, row = 1, sticky=tk.W+tk.E+tk.N)
 
 
 class HolderFrame(tk.Tk):
@@ -162,11 +177,10 @@ class HolderFrame(tk.Tk):
         self.filing_cabinet = FolderManager()
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
-        self.configure(bg = "red")
 
     def init_holder(self):
         self.frames = {}
-        for f in (LoginFrame, FolderFrame, InboxFrame): # Classes to include
+        for f in (LoginFrame, FolderFrame): # Classes to include
             frame = f(self, self)
             frame.grid(row=0, column=0, sticky=tk.NW+tk.SE)
             self.frames[f] = frame
