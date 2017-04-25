@@ -75,7 +75,7 @@ class FolderFrame(EmptyFrame):
         self.folders = filing_cabinet.list_folders()
         for folder in self.folders:
             inbox_frame = InboxFrame(self, self.controller, folder)
-            inbox_frame.grid(column=1, row=1, padx=0, pady=0, sticky=tk.W + tk.E, )
+            inbox_frame.grid(column=1, row=1, padx=0, pady=0, sticky=tk.W + tk.E)
             self.inboxes.append(inbox_frame)
 
     def create_widgets(self):
@@ -113,6 +113,7 @@ class InboxFrame(EmptyFrame):
         self.messengers = list()
         self.message_container = tk.Frame(self)
         self.update_inbox(self.folder)
+        self.grid_columnconfigure(0, weight=2)
         self.message_views = list()  # TODO: Currently very inefficient, make a caching system
 
     def get_folder(self):
@@ -135,7 +136,10 @@ class InboxFrame(EmptyFrame):
         for message in fetched_messages:
             self.messengers.append(Messenger(self.message_container, message, clean_messages[i], i+1, self, self.master))
             i = i + 1
+        for x in range(60):
+            self.message_container.columnconfigure(x, weight=1)
         self.message_container.grid(column = 0, row = 1, sticky=tk.W+tk.E+tk.N)
+        self.message_container.configure(bg="red")
         x = 0
             # for messenger in self.messengers:
             #     messenger.grid(column=1, row = x)
@@ -194,7 +198,7 @@ class HolderFrame(tk.Tk):
     def show_frame(self, frame):
         self.frames[frame].tkraise()
         if frame in [FolderFrame]:
-            self.minsize(width=800, height=600)
+            self.minsize(width=1080, height=600)
         if frame in [LoginFrame]:
             self.minsize(width=300, height=220)
 

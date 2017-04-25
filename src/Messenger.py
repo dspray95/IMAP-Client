@@ -17,7 +17,7 @@ class Messenger(tk.Frame):
         :param clean_message: cleaned email object for putting to strings 
         :param row: the grid.row to which the messenger should be placed
         :param inbox: the inbox which contains the message mobject
-        :param controller: The GUI main controller
+        :param controller The GUI main controller
         """
         tk.Frame.__init__(self, master)
         self.controller = controller
@@ -43,8 +43,8 @@ class Messenger(tk.Frame):
         self.clean_sender = clean_message[3]
         self.clean_body = clean_message[4]
         self.row = row
-
-        self.grid(column=1, row=self.row, columnspan=5, sticky=tk.W + tk.E + tk.N)
+        print self.clean_flags
+        self.grid(column=1, row=self.row, columnspan=8, sticky=tk.W + tk.E + tk.N)
 
         self.button_select = tk.Checkbutton(self.master)
         self.button_select.grid(column=1, row=self.row, padx=5, pady=5, sticky=tk.W+tk.E)
@@ -76,6 +76,57 @@ class Messenger(tk.Frame):
                                     pady=0,
                                     text="delete")
         self.btn_delete.grid(column=6, row=self.row, padx=0, pady=0, sticky=tk.E)
+        col = 6
+        b_flag_seen = False
+        b_flag_flagged = False
+        b_flag_answered = False
+        for flag in self.clean_flags:
+            if flag in '\\Seen':
+                b_flag_seen = True
+            if flag in '\\Flagged':
+                b_flag_flagged = True
+            if flag in '\\Answered':
+                b_flag_answered = True
+        btn_flag_flag = Flagger(b_flag_flagged, '\\Flagged', self.master,
+                           anchor="w",
+                           command=lambda: self.flag_toggle(btn_flag_flag),
+                           padx=0,
+                           pady=0,
+                           text="")
+        btn_flag_flag.grid(column=7, row=self.row, padx=20, pady=0, sticky=tk.W+tk.E)
+        btn_flag_answered = Flagger(b_flag_answered, '\\Answered', self.master,
+                                anchor="w",
+                                command=lambda: self.flag_toggle(btn_flag_answered),
+                                padx=0,
+                                pady=0,
+                                text="")
+        btn_flag_answered.grid(column=8, row=self.row, padx=0, pady=0, sticky=tk.E)
+        btn_flag_seen = Flagger(b_flag_seen,'\\Seen', self.master,
+                                anchor="w",
+                                command=lambda: self.flag_toggle(btn_flag_seen),
+                                padx=0,
+                                pady=0,
+                                text="")
+        btn_flag_seen.grid(column=9, row=self.row, padx=0, pady=0, sticky=tk.E)
+        # self.grid(column=0,row=self.row, sticky=tk.E)
+        # self.configure(bg="green")
+
+        # btn_flag_seen = Flagger("",)
+        # btn_flag_answered = Flagger()
+
+    def flag_toggle(self, flagger):
+        flagger.switch_flags()
+        # conn = self.controller.controller.get_conn()
+        # folder = self.inbox.get_folder()
+        # conn.select_folder(folder)
+        # messages = conn.search(['NOT', 'DELETED'])
+        # response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
+        # # Find the deleted message and delete
+        # for msgid, data in response.iteritems():
+        #     if msgid == self.clean_msgid:
+        #         conn.add_flags(msgid, [flag])
+        #         print flag, "toggled"
+
 
     def get_viewbox(self, message):
         """
@@ -162,6 +213,43 @@ class Messenger(tk.Frame):
         # except imaplib.IMAP4.error:
         #     print "Could not delete"
         #     raise ReferenceError("Could not delete")
+
+class Flagger(tk.Button):
+    def __init__(self, state, flag, *args, **kwargs):
+        tk.Button.__init__(self, *args, **kwargs)
+        self.flag_type = flag
+        self.flag = flag
+        self.state = state
+        self.update_label()
+
+    def switch_flags(self):
+        if self.state:
+            self.state = False
+        else:
+            self.state = True
+        self.update_label
+
+    def get_flag(self):
+        return self.flag
+
+    def update_label(self):
+        if self.flag_type in 'Flagged':
+            if self.state:
+                self.flag = '\\Flagged'
+            else:
+                self.flag = '\\Unflagged'
+        elif self.flag_type in 'Seen':
+            if self.state:
+                self.flag = '\\Seen'
+            else:
+                self.flag = '\\Unseen'
+        elif self.flag_type in 'Answered':
+            if self.state:
+                self.flag = '\\Answered'
+            else:
+                self.flag = '\\Unanswered'
+        self.configure(text=self.flag)
+
 
 class MessengerDud(Messenger):
     """
