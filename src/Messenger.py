@@ -67,7 +67,7 @@ class Messenger(tk.Frame):
                                   padx=5,
                                   pady=0,
                                   text="view")
-        self.btn_read.grid(column=5, row=self.row, padx=0, pady=0, sticky=tk.E)
+        self.btn_read.grid(column=5, row=self.row, padx=5, pady=0, sticky=tk.E)
 
         self.btn_delete = tk.Button(self.master,
                                     anchor="e",
@@ -75,7 +75,7 @@ class Messenger(tk.Frame):
                                     padx=5,
                                     pady=0,
                                     text="delete")
-        self.btn_delete.grid(column=6, row=self.row, padx=0, pady=0, sticky=tk.E)
+        self.btn_delete.grid(column=6, row=self.row, padx=5, pady=0, sticky=tk.E)
         col = 6
         b_flag_seen = False
         b_flag_flagged = False
@@ -90,24 +90,41 @@ class Messenger(tk.Frame):
         btn_flag_flag = Flagger(b_flag_flagged, '\\Flagged', self.master,
                            anchor="w",
                            command=lambda: self.flag_toggle(btn_flag_flag),
-                           padx=0,
+                           padx=5,
                            pady=0,
+                           width=10,
                            text="")
-        btn_flag_flag.grid(column=7, row=self.row, padx=20, pady=0, sticky=tk.W+tk.E)
+        btn_flag_flag.grid(column=7, row=self.row, padx=0, pady=0, sticky=tk.W+tk.E)
         btn_flag_answered = Flagger(b_flag_answered, '\\Answered', self.master,
                                 anchor="w",
                                 command=lambda: self.flag_toggle(btn_flag_answered),
-                                padx=0,
+                                padx=5,
                                 pady=0,
+                                width=10,
                                 text="")
         btn_flag_answered.grid(column=8, row=self.row, padx=0, pady=0, sticky=tk.E)
         btn_flag_seen = Flagger(b_flag_seen,'\\Seen', self.master,
                                 anchor="w",
                                 command=lambda: self.flag_toggle(btn_flag_seen),
-                                padx=0,
+                                padx=5,
                                 pady=0,
+                                width=8,
                                 text="")
         btn_flag_seen.grid(column=9, row=self.row, padx=0, pady=0, sticky=tk.E)
+        btn_move = tk.Button(self.master,
+                             anchor="w",
+                             command=lambda: self.message_move(False),
+                             padx=5,
+                             pady=0,
+                             text="move")
+        btn_move.grid(column=10, row=self.row, padx=0, pady=0, sticky=tk.E)
+        btn_copy = tk.Button(self.master,
+                             anchor="w",
+                             command=lambda: self.message_move(True),
+                             padx=5,
+                             pady=0,
+                             text="copy")
+        btn_copy.grid(column=11, row=self.row, padx=0, pady=0, sticky=tk.E)
         # self.grid(column=0,row=self.row, sticky=tk.E)
         # self.configure(bg="green")
 
@@ -116,16 +133,22 @@ class Messenger(tk.Frame):
 
     def flag_toggle(self, flagger):
         flagger.switch_flags()
-        # conn = self.controller.controller.get_conn()
-        # folder = self.inbox.get_folder()
-        # conn.select_folder(folder)
-        # messages = conn.search(['NOT', 'DELETED'])
-        # response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
-        # # Find the deleted message and delete
-        # for msgid, data in response.iteritems():
-        #     if msgid == self.clean_msgid:
-        #         conn.add_flags(msgid, [flag])
-        #         print flag, "toggled"
+        state = flagger.state
+        flag = flagger.flag_type
+
+        conn = self.controller.controller.get_conn()
+        folder = self.inbox.get_folder()
+        conn.select_folder(folder)
+        messages = conn.search(['NOT', 'DELETED'])
+        response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
+        # Find the deleted message and delete
+        for msgid, data in response.iteritems():
+            if msgid == self.clean_msgid:
+                if state:
+                    conn.add_flags(msgid, [flag])
+                else:
+                    conn.remove_flags(msgid, [flag])
+                print flag, "toggled"
 
 
     def get_viewbox(self, message):
@@ -223,27 +246,30 @@ class Flagger(tk.Button):
         self.update_label()
 
     def switch_flags(self):
+        print "swapping flags"
+        print self.flag_type
         if self.state:
             self.state = False
         else:
             self.state = True
-        self.update_label
+        self.update_label()
 
     def get_flag(self):
         return self.flag
 
     def update_label(self):
-        if self.flag_type in 'Flagged':
+        if self.flag_type in '\\Flagged':
+            print "flag", self.state
             if self.state:
                 self.flag = '\\Flagged'
             else:
                 self.flag = '\\Unflagged'
-        elif self.flag_type in 'Seen':
+        elif self.flag_type in '\\Seen':
             if self.state:
                 self.flag = '\\Seen'
             else:
                 self.flag = '\\Unseen'
-        elif self.flag_type in 'Answered':
+        elif self.flag_type in '\\Answered':
             if self.state:
                 self.flag = '\\Answered'
             else:
