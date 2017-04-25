@@ -102,7 +102,7 @@ class FolderFrame(EmptyFrame):
             current_inbox = self.inboxes[i]
             buttons.append(tk.Button(self.buttons_frame,
                                      anchor="w",
-                                     command=lambda current_inbox = current_inbox, folder = folder: current_inbox.switch_inboxes(folder, self.inboxes),
+                                     command=lambda current_inbox = current_inbox: current_inbox.switch_inboxes(self.inboxes),
                                      padx=5,
                                      pady=0,
                                      text=folder))
@@ -122,6 +122,7 @@ class InboxFrame(EmptyFrame):
         self.messengers = list()
         self.message_container = tk.Frame(self)
         self.update_inbox(self.folder)
+        self.message_views = list()  # TODO: Currently very inefficient, make a caching system
 
     def get_folder(self):
         return self.folder
@@ -138,9 +139,9 @@ class InboxFrame(EmptyFrame):
 
         i = 0
         clean_message_dud = 1, "Subject", "Flags", "Sender", "Body"
-        MessengerDud(self.message_container, "message_dud", clean_message_dud, 99, self.controller)
+        MessengerDud(self.message_container, "message_dud", clean_message_dud, 99, self, self.controller)
         for message in fetched_messages:
-            self.messengers.append(Messenger(self.message_container, message, clean_messages[i], i+1, self.controller))
+            self.messengers.append(Messenger(self.message_container, message, clean_messages[i], i+1, self, self.master))
             i = i + 1
         self.message_container.grid(column = 0, row = 1, sticky=tk.W+tk.E+tk.N)
         x = 0
@@ -148,16 +149,16 @@ class InboxFrame(EmptyFrame):
             #     messenger.grid(column=1, row = x)
             #     x = x + 1
 
-
-    # There is a much faster way to do this, but I dont have time to implement it
-    # If the widgets could be stored inside a Frame, each folder could be quickly swapped out
-    # and updated by comparison between a refresh in the folder handler and the current list
-    # of messages instead of completely remaking each widget (Theres a lot of widgets...)
-    def switch_inboxes(self, folder, other_inboxes):
+    def switch_inboxes(self, other_inboxes):
         for inbox in other_inboxes:
             inbox.grid_remove()
+        for messenger in self.messengers:
+            messenger.hide_message_view()
         self.grid(column = 1, row = 1, sticky=tk.W+tk.E+tk.N)
 
+    def push_message_view(self, message_view):
+        self.grid_remove()
+        message_view.grid(column=1,row=1, sticky=tk.W+tk.E+tk.N)
 
 class HolderFrame(tk.Tk):
     """The main window of the GUI.

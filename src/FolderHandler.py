@@ -7,7 +7,6 @@ class FolderManager():
         self.conn = conn
         self.folders = conn.list_folders()
         self.conn.select_folder("INBOX") #Initial folder
-        self.messages_in_current_folder = 0
 
     def list_folders(self):
         folders = self.conn.list_folders()
@@ -23,7 +22,6 @@ class FolderManager():
         folders = self.conn.list_folders()
 
         folderName = folderName.upper()
-        print folderName
         self.conn.close_folder()
 
         b_folder_found = False
@@ -42,10 +40,14 @@ class FolderManager():
         select_info = self.conn.select_folder(folder)
 
         messages = self.conn.search(['NOT', 'DELETED'])  # This is used when listing the messages and their attributes
-        unseen = self.conn.search([u'UNSEEN'])  # Narrow the search to the unseen messages
 
-        messages_in_folder = self.conn.fetch(messages,['RFC822', 'FLAGS', 'RFC822.SIZE', 'BODY[TEXT]'])
-        return messages_in_folder
+        response = self.conn.fetch(messages,['RFC822', 'FLAGS', 'RFC822.SIZE', 'BODY[TEXT]'])
+        self.messages_in_folder = list()
+
+        for msgid, data in response.iteritems():  # Iterate through messages and output attributes to console
+            msgRaw = email.message_from_string(data['RFC822'])
+            self.messages_in_folder.append(msgRaw)
+        return self.messages_in_folder
 
 
     def get_clean_messages(self, folder):
