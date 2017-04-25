@@ -3,7 +3,9 @@ from ttk import Frame, Button, Style, Label
 
 
 class GUI_Init(Frame):
-
+    '''
+    This class will assertain whether the user whats to use a GUI or a CLI, then run whichever they chose
+    '''
     def __init__(self, master):
         Frame.__init__(self, master)
 
@@ -15,25 +17,24 @@ class GUI_Init(Frame):
         self.master.title("IMAP Client")
         self.style = Style()
         self.style.theme_use("default")
-
-        self.pack(fill=BOTH, expand=1)
-
-        lbl_header = Label(text = "Choose an interface type")
-        lbl_header.place(x=50, y = 20)
-        btn_tui = Button(text="Command Line Interface")
+        self.grid(column = 0, row = 0)
+        self.master.grid_columnconfigure(0, weight=1)
+        lbl_header = Label(self, text = "Choose an interface type")
+        lbl_header.grid(column = 0, row = 0, columnspan = 2)
+        btn_tui = Button(self, text="CLI")
         btn_tui.config(command=lambda:choose_ui(self, btn_tui))
-        btn_tui.place(x=50, y=50)
-        btn_gui = Button(text="Graphical Interface")
+        btn_tui.grid(column = 0, row = 1)
+        btn_gui = Button(self, text="GUI")
         btn_gui.config(command=lambda:choose_ui(self, btn_gui))
-        btn_gui.place(x=50, y=90)
+        btn_gui.grid(column = 1, row = 1)
 
 def choose_ui(self, btn):
-    if btn['text'] in ["Graphical Interface"]:
+    if btn['text'] in ["GUI"]:
         root.destroy()
         import GUI_Main
     else:
+        root.withdraw()
         import textbased.Text_Main
-        b_GUI = False  # TODO: Link up with Text_Main.py for CLI
 
 
 root = Tk()

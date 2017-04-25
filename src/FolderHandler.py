@@ -31,7 +31,7 @@ class FolderManager():
     def select_folder(self, folderName):
         """
         Returns conn with a selected folder (folderName)
-        :param folderName: folder to connec
+        :param folderName: folder to connect
         :return: conn(IMAPClient)
         """
         folders = self.conn.list_folders()
@@ -99,7 +99,4 @@ class FolderManager():
                 flags = "no flags"
             clean_message = msgid, subject, flags, sender, body
             clean_messages.append(clean_message)
-        # for message in clean_messages:
-        #     print clean_messages[i].to_string()
-        #     i = i + 1
         return clean_messages

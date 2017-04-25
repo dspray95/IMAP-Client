@@ -1,7 +1,5 @@
 import email
 import Tkinter as tk
-import imaplib
-import imapclient
 
 class Messenger(tk.Frame):
     """
@@ -135,11 +133,24 @@ class Messenger(tk.Frame):
         # btn_flag_answered = Flagger()
 
     def choose_destination(self, moving):
+        '''
+        Grabs the folders and creates a FolderHolder popup
+        Because of how the destination popup works, we have to run this independant of 
+        message_move(), otherwise message_move() would carry on before the user could select a
+        destination.
+        :param moving: 
+        :return: 
+        '''
         folders = self.controller.folders
         destination_popup = FolderHolder(folders, self, moving)
 
     def message_move(self, moving):
-        print "dest = ", self.destination
+        '''
+        Can copy or move a file to another folder(self.destination)
+        Usually called from a FolderHolder popup
+        :param moving: Boolean, whether we are moving the file or just copying it
+        :return: 
+        '''
         conn = self.controller.controller.get_conn()
         folder = self.inbox.get_folder()
         conn.select_folder(folder)
@@ -157,6 +168,13 @@ class Messenger(tk.Frame):
         self.controller.refresh_inboxes()
 
     def flag_toggle(self, flagger):
+        '''
+        Uses Flagger objects to flip a messages flag between active and inactive.
+        Also relays this information to the controllers IMAPClient conn
+        :param flagger: 
+        :return: 
+        '''
+        #Swap the flags in the GUI
         flagger.switch_flags()
         state = flagger.state
         flag = flagger.flag_type
@@ -166,14 +184,13 @@ class Messenger(tk.Frame):
         conn.select_folder(folder)
         messages = conn.search(['NOT', 'DELETED'])
         response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
-        # Find the deleted message and delete
+        # Relay changes to conn
         for msgid, data in response.iteritems():
             if msgid == self.clean_msgid:
                 if state:
                     conn.add_flags(msgid, [flag])
                 else:
                     conn.remove_flags(msgid, [flag])
-                print flag, "toggled"
 
 
     def get_viewbox(self, message):
@@ -240,7 +257,7 @@ class Messenger(tk.Frame):
     def get_message(self):
         return self.message
 
-    def delete_message(self):
+    def delete_message(self):  # TODO: UX, make sure the user wants to delete the message
         """
         Goes through the process of first deleting the message from the main gui controllers
         conn(IMAPClient) then removing the dud entries from the Inbox and its GUI.
@@ -255,7 +272,6 @@ class Messenger(tk.Frame):
         for msgid, data in response.iteritems():
             if msgid == self.clean_msgid:
                 conn.delete_messages(msgid)
-                print "deleted message"
         self.hide_message_view()
         self.inbox.purge_messengers()
         # except imaplib.IMAP4.error:
@@ -263,7 +279,14 @@ class Messenger(tk.Frame):
         #     raise ReferenceError("Could not delete")
 
 class Flagger(tk.Button):
+    '''
+    Manages the messages flags
+    '''
     def __init__(self, state, flag, *args, **kwargs):
+        '''
+        :param state: Whether the flag is true or false
+        :param flag: the true name of the flag 
+        '''
         tk.Button.__init__(self, *args, **kwargs)
         self.flag_type = flag
         self.flag = flag
@@ -271,6 +294,11 @@ class Flagger(tk.Button):
         self.update_label()
 
     def switch_flags(self):
+        '''
+        Swaps the boolean state of this Flagger,
+        then updates the buttons label
+        :return: 
+        '''
         print "swapping flags"
         print self.flag_type
         if self.state:
@@ -303,8 +331,13 @@ class Flagger(tk.Button):
 
 
 class FolderHolder(tk.Toplevel):
-
+    '''
+    Used when choosing a destination to copy/move to
+    '''
     def __init__(self, folders, master, moving):
+        '''
+        :param moving: Whether the message is being moved(T) or copied(F)
+        '''
         tk.Toplevel.__init__(self)
         self.folders = folders
         self.moving = moving
@@ -316,10 +349,13 @@ class FolderHolder(tk.Toplevel):
           # close the popup when it's done
 
     def fill_holder(self):
+        '''
+        Populates the frame with folder buttons
+        :return: 
+        '''
         self.buttons_frame.grid(column=0, row=0, sticky=tk.W + tk.E + tk.N)
         i = 0
         for folder in self.folders:
-            print "creating button for ", folder
             folder_button = tk.Button(self.buttons_frame,
                                       anchor="w",
                                       command=lambda: self.select_folder(folder_button),
@@ -330,9 +366,7 @@ class FolderHolder(tk.Toplevel):
             self.buttons.append(folder_button)
             self.buttons[i].pack(fill=tk.BOTH, expand=1)
             row = i + 1
-            # buttons[i].grid(column=0, row=row, padx=0, pady=0, sticky=tk.W+tk.E+tk.N+tk.S)
             self.rowconfigure(row, minsize=30)
-            print "btn added"
             i = i + 1
 
     def select_folder(self, folder_button):
@@ -341,6 +375,12 @@ class FolderHolder(tk.Toplevel):
         self.push_folder()
 
     def push_folder(self):
+        '''
+        Sets the destination folder of the controller Messenger object,
+        then runs the move command. Once this is done the FolderHolder is no longer needed 
+        and can be destroyed.
+        :return: 
+        '''
         self.master.destination = self.folder
         self.master.message_move(self.moving)
         self.destroy()
