@@ -1,0 +1,35 @@
+David.Spray, Assignment 1, Networks
+
+To run the IMAP application, two external packages are required (tKinter and IMAPClient)
+To install these perform the following commands in terminal
+
+sudo apt-get install python-tk
+sudo pip install IMAPClient
+
+Once these are installed the application can be opened via the GUI_Init.py file
+in the src directory.
+
+The GUI currently does not match the CLI in features, but it is much easier to use.
+
+Commands available for use in the CLI include(Commands are case sensitive):
+	Folders Menu:
+		choose_folder
+		create_folder
+		delete_folder
+	Message Menu:
+		list
+		read
+		read all
+		create
+		copy
+		delete
+		move
+		set flag
+		remove flag
+		search
+		logout
+
+Many of these commands will prompt you for further input.
+
+USERNAME: david.spray
+PASSWORD: PUDU79X8

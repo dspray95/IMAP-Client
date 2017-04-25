@@ -92,7 +92,8 @@ def AccountLogout():
     except imaplib.IMAP4.error:
         print "err in logout"
 
-    action = raw_input("Choose an option:\n1. Connect to elwood\n 2. Connect to another address ")
+    action = raw_input("Choose an option:\n1. Conn"
+                       "ect to elwood\n 2. Connect to another address ")
     if action in ["1"]:
         Login.AttemptLogin()
     if action in ["2"]:
