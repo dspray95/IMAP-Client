@@ -151,8 +151,8 @@ class Messenger(tk.Frame):
             if msgid == self.clean_msgid:
                 conn.copy(msgid, self.destination)
                 print "copied"
-                    # if moving:
-                    #     # delete old file
+                if moving:
+                    self.delete_message()
 
         self.controller.refresh_inboxes()
 
