@@ -1,6 +1,7 @@
 import email
 import Tkinter as tk
 import imaplib
+import imapclient
 
 class Messenger(tk.Frame):
     """
@@ -29,6 +30,8 @@ class Messenger(tk.Frame):
         self.message = email.message_from_string(message)
         self.message_view_widgets = list
         self.message_view = tk.Frame(self.controller)
+        self.destination = "" # used for copying and moving messages
+        self.choosing_destination = False
 
     def build_messenger(self, clean_message, row):
         """
@@ -113,14 +116,14 @@ class Messenger(tk.Frame):
         btn_flag_seen.grid(column=9, row=self.row, padx=0, pady=0, sticky=tk.E)
         btn_move = tk.Button(self.master,
                              anchor="w",
-                             command=lambda: self.message_move(False),
+                             command=lambda: self.choose_destination(True),
                              padx=5,
                              pady=0,
                              text="move")
         btn_move.grid(column=10, row=self.row, padx=0, pady=0, sticky=tk.E)
         btn_copy = tk.Button(self.master,
                              anchor="w",
-                             command=lambda: self.message_move(True),
+                             command=lambda: self.choose_destination(False),
                              padx=5,
                              pady=0,
                              text="copy")
@@ -130,6 +133,28 @@ class Messenger(tk.Frame):
 
         # btn_flag_seen = Flagger("",)
         # btn_flag_answered = Flagger()
+
+    def choose_destination(self, moving):
+        folders = self.controller.folders
+        destination_popup = FolderHolder(folders, self, moving)
+
+    def message_move(self, moving):
+        print "dest = ", self.destination
+        conn = self.controller.controller.get_conn()
+        folder = self.inbox.get_folder()
+        conn.select_folder(folder)
+
+        messages = conn.search(['NOT', 'DELETED'])
+        response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
+
+        for msgid, data in response.iteritems():
+            if msgid == self.clean_msgid:
+                conn.copy(msgid, self.destination)
+                print "copied"
+                    # if moving:
+                    #     # delete old file
+
+        self.controller.refresh_inboxes()
 
     def flag_toggle(self, flagger):
         flagger.switch_flags()
@@ -232,7 +257,7 @@ class Messenger(tk.Frame):
                 conn.delete_messages(msgid)
                 print "deleted message"
         self.hide_message_view()
-        self.inbox.purge_messages()
+        self.inbox.purge_messengers()
         # except imaplib.IMAP4.error:
         #     print "Could not delete"
         #     raise ReferenceError("Could not delete")
@@ -275,6 +300,50 @@ class Flagger(tk.Button):
             else:
                 self.flag = '\\Unanswered'
         self.configure(text=self.flag)
+
+
+class FolderHolder(tk.Toplevel):
+
+    def __init__(self, folders, master, moving):
+        tk.Toplevel.__init__(self)
+        self.folders = folders
+        self.moving = moving
+        self.master = master
+        self.buttons=list()
+        self.buttons_frame = tk.Frame(self)
+        self.folder = ""
+        self.fill_holder()
+          # close the popup when it's done
+
+    def fill_holder(self):
+        self.buttons_frame.grid(column=0, row=0, sticky=tk.W + tk.E + tk.N)
+        i = 0
+        for folder in self.folders:
+            print "creating button for ", folder
+            folder_button = tk.Button(self.buttons_frame,
+                                      anchor="w",
+                                      command=lambda: self.select_folder(folder_button),
+                                      padx=5,
+                                      pady=0,
+                                      width=30,
+                                      text = folder)
+            self.buttons.append(folder_button)
+            self.buttons[i].pack(fill=tk.BOTH, expand=1)
+            row = i + 1
+            # buttons[i].grid(column=0, row=row, padx=0, pady=0, sticky=tk.W+tk.E+tk.N+tk.S)
+            self.rowconfigure(row, minsize=30)
+            print "btn added"
+            i = i + 1
+
+    def select_folder(self, folder_button):
+        self.folder = folder_button['text']
+        print "selected, ", self.folder
+        self.push_folder()
+
+    def push_folder(self):
+        self.master.destination = self.folder
+        self.master.message_move(self.moving)
+        self.destroy()
 
 
 class MessengerDud(Messenger):

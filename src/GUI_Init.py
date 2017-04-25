@@ -29,7 +29,7 @@ class GUI_Init(Frame):
 
 def choose_ui(self, btn):
     if btn['text'] in ["Graphical Interface"]:
-        root.withdraw()
+        root.destroy()
         import GUI_Main
     else:
         import textbased.Text_Main

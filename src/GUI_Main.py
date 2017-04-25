@@ -103,6 +103,11 @@ class FolderFrame(EmptyFrame):
             self.rowconfigure(row, minsize=30)
             print "btn added"
             i = i + 1
+        self.inboxes[1].switch_inboxes(self.inboxes)
+
+    def refresh_inboxes(self):
+        for inbox in self.inboxes:
+            inbox.update_inbox()
 
 class InboxFrame(EmptyFrame):
 
@@ -112,16 +117,15 @@ class InboxFrame(EmptyFrame):
         self.controller = controller
         self.messengers = list()
         self.message_container = tk.Frame(self)
-        self.update_inbox(self.folder)
+        self.update_inbox()
         self.grid_columnconfigure(0, weight=2)
-        self.message_views = list()  # TODO: Currently very inefficient, make a caching system
+        self.message_views = list()  # TODO: unnecessary memory use, use caching
 
     def get_folder(self):
         return self.folder
 
-    def update_inbox(self, folder):
+    def update_inbox(self):
         self.message_container = tk.Frame(self) #reset the message container for population
-        self.folder = folder
         fetched_messages = self.controller.get_messages(self.folder)
         clean_messages = self.controller.get_clean_messages(self.folder)
 
@@ -160,13 +164,13 @@ class InboxFrame(EmptyFrame):
         message_view.grid_remove()
         self.grid()
 
-    def purge_messages(self):
+    def purge_messengers(self):
         for messenger in self.messengers:
             messenger.hide_message_view()
             print "hiding old views"
         for message_view in self.message_views:
             self.hide_message_view(message_view)
-        self.update_inbox(self.folder)
+        self.update_inbox()
 
 class HolderFrame(tk.Tk):
     """The main window of the GUI.
@@ -243,6 +247,7 @@ class HolderFrame(tk.Tk):
         return self.conn
 
 app = HolderFrame()
+app.update()
 app.mainloop()
 app.protocol("WM_DELETE_WINDOW", sys.exit())
 exit()
