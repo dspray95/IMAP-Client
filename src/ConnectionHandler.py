@@ -5,8 +5,12 @@ import imaplib
 class ConnectionManager():
 
     def connect(self, server):
-        # Setup connection to Elwood #
-        ssl = False
+        """
+        Creats the conn IMAPClient object with input from the GUI
+        :param server: String
+        :return: IMAPClient
+        """
+        ssl = False  # TODO: Un-hardcode, give option in gui
         print "Creating connection..."
         try:
             self.conn = IMAPClient(server, ssl=ssl)
@@ -16,6 +20,12 @@ class ConnectionManager():
         return self.conn
 
     def login(self, username, password):
+        """
+        Logs in to the user account with input from the GUI
+        :param username: String
+        :param password: String
+        :return: IMAPClient
+        """
         try:
             self.conn.login(username, password)
             print "logged in"#

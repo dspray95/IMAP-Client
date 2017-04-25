@@ -1,14 +1,25 @@
 import imaplib
 import email
 
+
 class FolderManager():
 
     def set_conn(self, conn):
+        """
+        grabs the input IMAPClient from the main gui controller and sets up for use.
+        initially selects the folder INBOX 
+        :param conn: IMAPClient
+        :return: 
+        """
         self.conn = conn
         self.folders = conn.list_folders()
-        self.conn.select_folder("INBOX") #Initial folder
+        self.conn.select_folder("INBOX")  # Initial folder, shouldn't be hardcoded, should be set with list(0)
 
     def list_folders(self):
+        """
+        returns a list of folder names for GUI use
+        :return: 
+        """
         folders = self.conn.list_folders()
         print 'FOLDERS'
         clean_folders = list()  # List of folder names as strings only e.g "Folder1", "Folder2" etc.
@@ -18,7 +29,11 @@ class FolderManager():
         return clean_folders
 
     def select_folder(self, folderName):
-
+        """
+        Returns conn with a selected folder (folderName)
+        :param folderName: folder to connec
+        :return: conn(IMAPClient)
+        """
         folders = self.conn.list_folders()
 
         folderName = folderName.upper()
@@ -37,6 +52,11 @@ class FolderManager():
         return self.conn
 
     def get_messages(self, folder):
+        """
+        Gathers messages from the selected folder and returns them in a list format
+        :param folder: 
+        :return: 
+        """
         select_info = self.conn.select_folder(folder)
 
         messages = self.conn.search(['NOT', 'DELETED'])  # This is used when listing the messages and their attributes
@@ -46,12 +66,16 @@ class FolderManager():
 
         for msgid, data in response.iteritems():  # Iterate through messages and output attributes to console
             msgRaw = email.message_from_string(data['RFC822'])
-            self.messages_in_folder.append(msgRaw)
+            self.messages_in_folder.append(data['RFC822'])
         return self.messages_in_folder
 
 
     def get_clean_messages(self, folder):
-
+        """
+        'Cleans' messages and returns them as a list of strings
+        :param folder: 
+        :return: 
+        """
         messages = self.conn.search(['NOT', 'DELETED'])  # This is used when listing the messages and their attributes
 
         response = self.conn.fetch(messages, ['RFC822', 'FLAGS', 'RFC822.SIZE', 'BODY[TEXT]'])  # Gather needed attributes
@@ -79,15 +103,3 @@ class FolderManager():
         #     print clean_messages[i].to_string()
         #     i = i + 1
         return clean_messages
-
-#
-# class clean_message():
-#     def __init__(self, subject, msgid, flags, sender):
-#         self.subject = subject
-#         self.flags = flags
-#         self.msgid = msgid
-#         self.sender = sender
-#
-#     def to_string(self):
-#         string = self.subject + " " + str(self.msgid) + " " + str(self.flags) + " "  + str(self.sender)
-#         return string

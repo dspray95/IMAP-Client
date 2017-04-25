@@ -1,24 +1,42 @@
 import email
 import Tkinter as tk
+import imaplib
 
 class Messenger(tk.Frame):
     """
+    The messenger class is used to send and update attributes of a message to the GUI. 
+    
     widgets here get sent to a holder frame in inbox_frame before being added to the grid layout
     this is done to keep alignment with all the messenger objects, while still keeping the benefit of having this class
     separate from it's inbox_frame
     """
     def __init__(self, master, message, clean_message, row, inbox, controller):
+        """
+        :param master: Master (Usually the inbox's master
+        :param message: email message object
+        :param clean_message: cleaned email object for putting to strings 
+        :param row: the grid.row to which the messenger should be placed
+        :param inbox: the inbox which contains the message mobject
+        :param controller: The GUI main controller
+        """
         tk.Frame.__init__(self, master)
         self.controller = controller
         self.master = master
         self.inbox = inbox
         if row < 99:
             self.build_messenger(clean_message, row)
-        self.message = message
+        self.message_raw = message
+        self.message = email.message_from_string(message)
         self.message_view_widgets = list
         self.message_view = tk.Frame(self.controller)
 
     def build_messenger(self, clean_message, row):
+        """
+        Builds the widgets for the messenger. Widgets are built to master in order to keep them
+        grid aligned
+        :param clean_message: cleaned message object for passing to string
+        :param row: row to which the message should be inserted
+        """
         self.clean_msgid = clean_message[0]
         self.clean_subject = clean_message[1]
         self.clean_flags = clean_message[2]
@@ -51,8 +69,13 @@ class Messenger(tk.Frame):
                                   text="view")
         self.btn_read.grid(column=5, row=self.row, padx=0, pady=0, sticky=tk.E)
 
-    def get_body(self):
-        msgRaw = email.message_from_string(self)
+        self.btn_delete = tk.Button(self.master,
+                                    anchor="e",
+                                    command=lambda : self.delete_message(),
+                                    padx=5,
+                                    pady=0,
+                                    text="delete")
+        self.btn_delete.grid(column=6, row=self.row, padx=0, pady=0, sticky=tk.E)
 
     def get_viewbox(self, message):
         """
@@ -65,7 +88,13 @@ class Messenger(tk.Frame):
         msgRaw = message
         subject = email.utils.parseaddr(msgRaw['Subject'])
         sender = email.utils.parseaddr(msgRaw['From'])
-        body = msgRaw.get_payload()
+        if msgRaw.is_multipart():
+            body = msgRaw.get_payload(0).get_payload()
+            # for part in msgRaw.get_payload():
+            #     body = body + part.get_payload()
+            #     print part.get_payload()
+        else:
+            body = msgRaw.get_payload(decode = True)
 
 
         self.lbl_subject = tk.Label(self.message_view,
@@ -86,20 +115,58 @@ class Messenger(tk.Frame):
         lbl_message_body = tk.Label(self.message_view,
                                     anchor=tk.W,
                                     text=body)
+        btn_back = tk.Button(self.message_view,
+                                  anchor="e",
+                                  command=lambda : self.hide_message_view(),
+                                  padx=5,
+                                  pady=0,
+                                  text="back")
         self.lbl_subject.grid(column=0, row=0, padx=5, sticky=tk.N)
         lbl_message_subject.grid(column=1, row=0, sticky=tk.W)
         lbl_sender.grid(column=0, row=1, padx=5, sticky=tk.N)
         lbl_message_sender.grid(column=1, row =1, sticky=tk.W)
         lbl_body.grid(column=0, row=2, padx=5, sticky=tk.N)
         lbl_message_body.grid(column=1, row=2, sticky=tk.W)
+        btn_back.grid(column = 1, row = 3, sticky=tk.E)
         self.inbox.push_message_view(self.message_view)
 
     def hide_message_view(self):
+        """
+        Removes this object from the master grid view
+        :return: 
+        """
         self.message_view.grid_remove()
+        self.inbox.hide_message_view(self.message_view)
 
+    def get_message(self):
+        return self.message
 
+    def delete_message(self):
+        """
+        Goes through the process of first deleting the message from the main gui controllers
+        conn(IMAPClient) then removing the dud entries from the Inbox and its GUI.
+        :return: 
+        """
+        conn = self.controller.controller.get_conn()
+        folder = self.inbox.get_folder()
+        conn.select_folder(folder)
+        messages = conn.search(['NOT', 'DELETED'])
+        response = conn.fetch(messages, ['RFC822', 'BODY[TEXT]', 'FLAGS'])
+        # Find the deleted message and delete
+        for msgid, data in response.iteritems():
+            if msgid == self.clean_msgid:
+                conn.delete_messages(msgid)
+                print "deleted message"
+        self.hide_message_view()
+        self.inbox.purge_messages()
+        # except imaplib.IMAP4.error:
+        #     print "Could not delete"
+        #     raise ReferenceError("Could not delete")
 
 class MessengerDud(Messenger):
+    """
+    Used in setting the headers for the inbox window
+    """
     def __init__(self, master, message, clean_message, row, inbox, controller):
         Messenger.__init__(self, master, message, clean_message, row, inbox, controller)
         self.message_view_widgets = list()

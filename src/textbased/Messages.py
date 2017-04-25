@@ -167,11 +167,9 @@ def delete_message(conn, folder, only_delete=True):
         if msgid == message:
             try:
                 conn.delete_messages(msgid)
-                if only_delete:
-                    print "Message deleted"
             except imaplib.IMAP4.error:
-                print "Could not copy"
-                raise ReferenceError("Could not copy")
+                print "Could not delete"
+                raise ReferenceError("Could not delete")
 
 def move_message(conn, folder):
     message = int(input("Email id (int) : "))

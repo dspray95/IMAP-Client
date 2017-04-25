@@ -5,17 +5,8 @@ from Messenger import Messenger, MessengerDud
 import sys
 from ttk import Frame, Button, Style
 
+
 class EmptyFrame(tk.Frame):
-    """An abstract base class for the frames that sit inside PythonGUI.
-
-    Args:
-      master (tk.Frame): The parent widget.
-      controller (HolderFrame): The controlling Tk object.
-
-    Attributes:
-      controller (HolderFrame): The controlling Tk object.
-
-    """
 
     def __init__(self, master, controller):
         tk.Frame.__init__(self, master)
@@ -128,13 +119,14 @@ class InboxFrame(EmptyFrame):
         return self.folder
 
     def update_inbox(self, folder):
+        self.message_container = tk.Frame(self) #reset the message container for population
         self.folder = folder
         fetched_messages = self.controller.get_messages(self.folder)
-        print "fetched messages"
         clean_messages = self.controller.get_clean_messages(self.folder)
 
         print "Fetched", len(fetched_messages)
         print "Cleaned", len(clean_messages)
+
         self.messengers = list()
 
         i = 0
@@ -159,6 +151,18 @@ class InboxFrame(EmptyFrame):
     def push_message_view(self, message_view):
         self.grid_remove()
         message_view.grid(column=1,row=1, sticky=tk.W+tk.E+tk.N)
+
+    def hide_message_view(self, message_view):
+        message_view.grid_remove()
+        self.grid()
+
+    def purge_messages(self):
+        for messenger in self.messengers:
+            messenger.hide_message_view()
+            print "hiding old views"
+        for message_view in self.message_views:
+            self.hide_message_view(message_view)
+        self.update_inbox(self.folder)
 
 class HolderFrame(tk.Tk):
     """The main window of the GUI.
@@ -230,6 +234,9 @@ class HolderFrame(tk.Tk):
     def get_clean_messages(self, folder):
         clean_messages = self.filing_cabinet.get_clean_messages(folder)
         return clean_messages
+
+    def get_conn(self):
+        return self.conn
 
 app = HolderFrame()
 app.mainloop()
